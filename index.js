@@ -6,6 +6,10 @@ function sha1 (key, body) {
   return crypto.createHmac('sha1', key).update(body).digest('base64')
 }
 
+function sha256 (key, body) {
+  return crypto.createHmac('sha256', key).update(body).digest('base64');
+}
+
 function rsa (key, body) {
   return crypto.createSign("RSA-SHA1").update(body).sign(key, 'base64');
 }
@@ -89,6 +93,16 @@ function hmacsign (httpMethod, base_uri, params, consumer_secret, token_secret) 
   return sha1(key, base)
 }
 
+function hmacsign256 (httpMethod, base_uri, params, consumer_secret, token_secret) {
+  var base = generateBase(httpMethod, base_uri, params);
+  var key = [
+    consumer_secret || '',
+    token_secret || ''
+  ].map(rfc3986).join('&');
+
+  return sha256(key, base)
+}
+
 function rsasign (httpMethod, base_uri, params, private_key, token_secret) {
   var base = generateBase(httpMethod, base_uri, params)
   var key = private_key || ''
@@ -116,6 +130,9 @@ function sign (signMethod, httpMethod, base_uri, params, consumer_secret, token_
     case 'HMAC-SHA1':
       method = hmacsign
       break
+    case 'HMAC-SHA256':
+      method = hmacsign256;
+      break;
     case 'PLAINTEXT':
       method = plaintext
       skipArgs = 4
@@ -128,6 +145,7 @@ function sign (signMethod, httpMethod, base_uri, params, consumer_secret, token_
 }
 
 exports.hmacsign = hmacsign
+exports.hmacsign256 = hmacsign256
 exports.rsasign = rsasign
 exports.plaintext = plaintext
 exports.sign = sign

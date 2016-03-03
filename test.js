@@ -1,10 +1,79 @@
 var oauth = require('./index')
   , hmacsign = oauth.hmacsign
+  , hmacsign256 = oauth.hmacsign256
   , assert = require('assert')
   , qs = require('querystring')
   ;
 
 // Tests from Twitter documentation https://dev.twitter.com/docs/auth/oauth
+var reqsign = hmacsign256('POST', 'https://api.twitter.com/oauth/request_token',
+  { oauth_callback: 'http://localhost:3005/the_dance/process_callback?service_provider_id=11'
+    , oauth_consumer_key: 'GDdmIQH6jhtmLUypg82g'
+    , oauth_nonce: 'QP70eNmVz8jvdPevU3oJD2AfF7R7odC2XJcn4XlZJqk'
+    , oauth_signature_method: 'HMAC-SHA256'
+    , oauth_timestamp: '1272323042'
+    , oauth_version: '1.0'
+  }, "MCD8BKwGdgPHvAuvgvz4EQpqDAtx89grbuNMRd7Eh98")
+
+console.log(reqsign)
+console.log('N0KBpiPbuPIMx2B77eIg7tNfGNF81iq3bcO9RO6lH+k=')
+assert.equal(reqsign, 'N0KBpiPbuPIMx2B77eIg7tNfGNF81iq3bcO9RO6lH+k=')
+
+var accsign = hmacsign256('POST', 'https://api.twitter.com/oauth/access_token',
+  { oauth_consumer_key: 'GDdmIQH6jhtmLUypg82g'
+    , oauth_nonce: '9zWH6qe0qG7Lc1telCn7FhUbLyVdjEaL3MO5uHxn8'
+    , oauth_signature_method: 'HMAC-SHA256'
+    , oauth_token: '8ldIZyxQeVrFZXFOZH5tAwj6vzJYuLQpl0WUEYtWc'
+    , oauth_timestamp: '1272323047'
+    , oauth_verifier: 'pDNg57prOHapMbhv25RNf75lVRd6JDsni1AJJIDYoTY'
+    , oauth_version: '1.0'
+  }, "MCD8BKwGdgPHvAuvgvz4EQpqDAtx89grbuNMRd7Eh98", "x6qpRnlEmW9JbQn4PQVVeVG8ZLPEx6A0TOebgwcuA")
+
+console.log(accsign)
+console.log('y7S9eUhA0tC9/YfRzCPqkg3/bUdYRDpZ93Xi51AvhjQ=')
+assert.equal(accsign, 'y7S9eUhA0tC9/YfRzCPqkg3/bUdYRDpZ93Xi51AvhjQ=')
+
+var upsign = hmacsign256('POST', 'http://api.twitter.com/1/statuses/update.json',
+  { oauth_consumer_key: "GDdmIQH6jhtmLUypg82g"
+    , oauth_nonce: "oElnnMTQIZvqvlfXM56aBLAf5noGD0AQR3Fmi7Q6Y"
+    , oauth_signature_method: "HMAC-SHA256"
+    , oauth_token: "819797-Jxq8aYUDRmykzVKrgoLhXSq67TEa5ruc4GJC2rWimw"
+    , oauth_timestamp: "1272325550"
+    , oauth_version: "1.0"
+    , status: 'setting up my twitter 私のさえずりを設定する'
+  }, "MCD8BKwGdgPHvAuvgvz4EQpqDAtx89grbuNMRd7Eh98", "J6zix3FfA9LofH0awS24M3HcBYXO5nI1iYe8EfBA")
+
+console.log(upsign)
+console.log('xYhKjozxc3NYef7C26WU+gORdhEURdZRxSDzRttEKH0=')
+assert.equal(upsign, 'xYhKjozxc3NYef7C26WU+gORdhEURdZRxSDzRttEKH0=')
+
+// handle objects in params (useful for Wordpress REST API)
+var upsign = hmacsign256('POST', 'http://wordpress.com/wp-json',
+  { oauth_consumer_key: "GDdmIQH6jhtmLUypg82g"
+    , oauth_nonce: "oElnnMTQIZvqvlfXM56aBLAf5noGD0AQR3Fmi7Q6Y"
+    , oauth_signature_method: "HMAC-SHA256"
+    , oauth_token: "819797-Jxq8aYUDRmykzVKrgoLhXSq67TEa5ruc4GJC2rWimw"
+    , oauth_timestamp: "1272325550"
+    , oauth_version: "1.0"
+    , filter: { number: "-1" }
+  }, "MCD8BKwGdgPHvAuvgvz4EQpqDAtx89grbuNMRd7Eh98", "J6zix3FfA9LofH0awS24M3HcBYXO5nI1iYe8EfBA")
+
+console.log(upsign)
+console.log('6hXbe84vZjenN4Il6ko0dpIBxUXrWj4SBFoBwgCIK+8=')
+assert.equal(upsign, '6hXbe84vZjenN4Il6ko0dpIBxUXrWj4SBFoBwgCIK+8=')
+
+// example in rfc5849
+var params = qs.parse('b5=%3D%253D&a3=a&c%40=&a2=r%20b' + '&' + 'c2&a3=2+q')
+params.oauth_consumer_key = '9djdj82h48djs9d2'
+params.oauth_token = 'kkk9d7dh3k39sjv7'
+params.oauth_nonce = '7d8f3e4a'
+params.oauth_signature_method = 'HMAC-SHA256'
+params.oauth_timestamp = '137131201'
+
+var rfc5849sign = hmacsign256('POST', 'http://example.com/request',
+  params, "j49sk3j29djd", "dh893hdasih9")
+
+////////////// SHA1
 
 var reqsign = hmacsign('POST', 'https://api.twitter.com/oauth/request_token', 
   { oauth_callback: 'http://localhost:3005/the_dance/process_callback?service_provider_id=11'
